@@ -1,6 +1,6 @@
 import pygame
 import math
-from datetime import datetime
+from datetime import datetime, timedelta
 from time import time
 pygame.init()
 
@@ -23,19 +23,14 @@ DARK_BLUE = (40, 61, 153)
 AU = 149.6e9 
 G  = 6.67428e-11 
 SCALE = 13 / AU # Bigger number = zoom in
-
-global TIMESTEP
 TIMESTEP = 1440 # 1 day/sec (1440 seconds per frame @ 60fps)
-
-global bodies
 bodies = []
+elapsed_time = datetime(2000, 1, 1)
 
-global current_date
-current_date = datetime(2000, 1, 1)
-
-# Schedule an event which updates the onscreen text once every 100ms
+# Schedule an event which updates the onscreen text once every 500ms
 UPDATE_TEXT_EVENT = pygame.USEREVENT
-pygame.time.set_timer(UPDATE_TEXT_EVENT, 100)
+UPDATE_DELAY = 500
+pygame.time.set_timer(UPDATE_TEXT_EVENT, UPDATE_DELAY)
 
 class Planet:
     def __init__(self, name, x, y, radius, colour, mass):
@@ -167,6 +162,7 @@ def main():
         WIN.fill(BLACK)
 
         # Loop through each game event (keypresses etc.)
+        global TIMESTEP
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -175,8 +171,10 @@ def main():
                 for body in bodies:
                     body.speed = math.sqrt(body.x_vel ** 2 + body.y_vel ** 2) / 1000
                     body.distance_in_au = round(body.distance_to_sun/AU, 3)
+                global elapsed_time
+                elapsed_time = elapsed_time + timedelta(seconds=TIMESTEP * (UPDATE_DELAY * 60 / 1000))
+
             if event.type == pygame.KEYDOWN:
-                global TIMESTEP
                 # Increase/decrease timestep with +/-
                 if event.key == pygame.K_KP_PLUS:
                     if paused:
@@ -219,8 +217,9 @@ def main():
         path_tip = FONT.render('HOME to toggle orbital paths', 1, WHITE)
         WIN.blit(path_tip, (10, 762))
 
-        # Calculate the current date and render it on screen
-        # current_date = current_date + (TIMESTEP / 60)
+        # Render the simulation datetime
+        date_text = FONT.render(f'Date: {elapsed_time}', 1, WHITE)
+        WIN.blit(date_text, (10, 744))
 
         # Tell pygame to draw the next frame
         pygame.display.update()
