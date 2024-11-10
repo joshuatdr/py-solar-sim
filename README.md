@@ -10,12 +10,11 @@ An example of a planetary physics simulation using pygame
 - PgUp/PgDn to zoom
 - PAUSE to pause the simulation
 
----
-
 <p float="left">
-  <img src="screenshots/img1.png" width="500" />
-  <img src="screenshots/img2.png" width="500" /> 
-  <img src="screenshots/img3.png" width="500" />
+  <img src="screenshots/img1.png" width="400" />
+  <img src="screenshots/img2.png" width="400" /> 
+  <img src="screenshots/img3.png" width="400" />
+  <img src="screenshots/img4.png" width="400" />
 </p>
 
 Based on this tutorial by Tech With Tim:

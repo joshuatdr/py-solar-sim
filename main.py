@@ -31,6 +31,7 @@ timestep = 1440 # 1 day/sec (1440 seconds per frame @ 60fps)
 bodies = []
 elapsed_time = datetime(2266, 1, 1)
 multiplier = (timestep) / (1440)
+show_ui = True
 
 # Schedule an event which calculates game data every 50ms
 UPDATE = pygame.USEREVENT
@@ -61,10 +62,11 @@ class Planet:
         self.y_vel = 0
 
     def draw(self, win):
+        global show_ui
+
         # Draw a circle on screen to represent the planet
         x = self.x * scale + WIDTH / 2
         y = self.y * scale + HEIGHT / 2
-
         pygame.draw.circle(win, self.colour, (x, y), self.radius)
 
         # Render the orbital path
@@ -78,17 +80,18 @@ class Planet:
                 planet_label = LABEL_FONT.render(f'{self.label}', 1, WHITE)
                 win.blit(planet_label, (x - 3, y + 5))
 
-            # Render the planet's name
-            planet_text = FONT.render(f'{self.name}', 1, WHITE)
-            win.blit(planet_text, (10, ((bodies.index(self) - 1) * 18) + 10))
+            if show_ui:
+                # Render the planet's name
+                planet_text = FONT.render(f'{self.name}', 1, WHITE)
+                win.blit(planet_text, (10, ((bodies.index(self) - 1) * 18) + 10))
 
-            # Render the distance to the sun in AU
-            distance_text = FONT.render(f'{self.distance_in_au} AU', 1, WHITE)
-            win.blit(distance_text, (70, ((bodies.index(self) - 1) * 18) + 10))
+                # Render the distance to the sun in AU
+                distance_text = FONT.render(f'{self.distance_in_au} AU', 1, WHITE)
+                win.blit(distance_text, (70, ((bodies.index(self) - 1) * 18) + 10))
 
-            # Render the planet's absolute velocity (speed)
-            speed_text = FONT.render(f'{self.speed:.3f} Km/s', 1, WHITE)
-            win.blit(speed_text, (150, ((bodies.index(self) - 1) * 18) + 10))
+                # Render the planet's absolute velocity (speed)
+                speed_text = FONT.render(f'{self.speed:.3f} Km/s', 1, WHITE)
+                win.blit(speed_text, (150, ((bodies.index(self) - 1) * 18) + 10))
 
     # Sum the gravitational forces on a planet from all other bodies
     # And return the net force
@@ -168,9 +171,12 @@ def main():
         # Fill the window with an RGB colour
         WIN.fill(BLACK)
 
-        # Loop through each game event (keypresses etc.)
+        # Get global variables
         global timestep
         global scale
+        global show_ui
+
+        # Loop through each game event (keypresses etc.)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -245,6 +251,9 @@ def main():
                 if event.key == pygame.K_l:
                     for body in bodies:
                         body.show_label = not body.show_label
+                # Press H to toggle UI
+                if event.key == pygame.K_h:
+                    show_ui = not show_ui
                 # Zoom with PgUp/PgDown
                 if event.key == pygame.K_PAGEUP:
                     scale = scale * 2
@@ -259,41 +268,45 @@ def main():
 
             body.draw(WIN)
 
-        # Render the current time multiplier
         multiplier = (timestep) / (1440)
-        if multiplier == 365:
-            multiplier_format = '1 year/s'
-        elif multiplier >= 1:
-            multiplier_format = f'{multiplier:.0f} day/s'
-        else:
-            multiplier_format = f'{multiplier / (60/1440):.0f} hr/s'
+        if show_ui:
+            # Render the current time multiplier
+            if multiplier == 365:
+                multiplier_format = '1 year/s'
+            elif multiplier >= 1:
+                multiplier_format = f'{multiplier:.0f} day/s'
+            else:
+                multiplier_format = f'{multiplier / (60/1440):.0f} hr/s'
 
-        multiplier_text = FONT.render('PAUSED' if paused else multiplier_format, 1, BLUE)
-        WIN.blit(multiplier_text, (10, 38 + ((len(bodies) - 1) * 18)))
+            multiplier_text = FONT.render('PAUSED' if paused else multiplier_format, 1, BLUE)
+            WIN.blit(multiplier_text, (10, 38 + ((len(bodies) - 1) * 18)))
 
-        # Render the control tips
-        multiplier_tip = FONT.render('PgUp/PgDn to zoom', 1, WHITE)
-        WIN.blit(multiplier_tip, (10, 780))
+            # Render the control tips
+            multiplier_tip = FONT.render('PgUp/PgDn to zoom', 1, WHITE)
+            WIN.blit(multiplier_tip, (10, 780))
 
-        multiplier_tip = FONT.render('NUMPAD +/- to speed up or slow down time', 1, WHITE)
-        WIN.blit(multiplier_tip, (10, 762))
+            multiplier_tip = FONT.render('NUMPAD +/- to speed up or slow down time', 1, WHITE)
+            WIN.blit(multiplier_tip, (10, 762))
 
-        path_tip = FONT.render('HOME to toggle orbital paths', 1, WHITE)
-        WIN.blit(path_tip, (10, 744))
+            path_tip = FONT.render('HOME to toggle orbital paths', 1, WHITE)
+            WIN.blit(path_tip, (10, 744))
 
-        label_tip = FONT.render('L to toggle planet labels', 1, WHITE)
-        WIN.blit(label_tip, (10, 726))
+            label_tip = FONT.render('L to toggle planet labels', 1, WHITE)
+            WIN.blit(label_tip, (10, 726))
 
-        pause_tip = FONT.render('PAUSE to pause', 1, WHITE)
-        WIN.blit(pause_tip, (10, 708))
+            pause_tip = FONT.render('PAUSE to pause', 1, WHITE)
+            WIN.blit(pause_tip, (10, 708))
 
-        # Render the simulation datetime
-        date_text = FONT.render(f'Date: {elapsed_time}', 1, WHITE)
-        WIN.blit(date_text, (10, 20 + ((len(bodies) - 1) * 18)))
+            hide_ui_tip = FONT.render('H to hide the UI', 1, WHITE)
+            WIN.blit(hide_ui_tip, (10, 690))
 
-        # Render the frames per second
-        fps_text = FONT.render(f'FPS: {clock.get_fps():.1f}', 1, WHITE)
-        WIN.blit(fps_text, (730, 10))
+            # Render the simulation datetime
+            date_text = FONT.render(f'Date: {elapsed_time}', 1, WHITE)
+            WIN.blit(date_text, (10, 20 + ((len(bodies) - 1) * 18)))
+
+            # Render the frames per second
+            fps_text = FONT.render(f'FPS: {clock.get_fps():.1f}', 1, WHITE)
+            WIN.blit(fps_text, (730, 10))
 
         # Tell pygame to draw the next frame
         pygame.display.update()
