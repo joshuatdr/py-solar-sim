@@ -1,5 +1,7 @@
 import pygame
 import math
+from datetime import datetime
+from time import time
 pygame.init()
 
 WIDTH, HEIGHT = 800, 800
@@ -23,11 +25,17 @@ G  = 6.67428e-11
 SCALE = 13 / AU # Bigger number = zoom in
 
 global TIMESTEP
-TIMESTEP = 131487.192 # 0.25 yr/sec (2191.4532 seconds per frame @ 60fps)
+TIMESTEP = 1440 # 1 day/sec (1440 seconds per frame @ 60fps)
 
 global bodies
 bodies = []
 
+global current_date
+current_date = datetime(2000, 1, 1)
+
+# Schedule an event which updates the onscreen text once every 100ms
+UPDATE_TEXT_EVENT = pygame.USEREVENT
+pygame.time.set_timer(UPDATE_TEXT_EVENT, 100)
 
 class Planet:
     def __init__(self, name, x, y, radius, colour, mass):
@@ -41,6 +49,8 @@ class Planet:
         self.orbit = []
         self.sun = False
         self.distance_to_sun = 0
+        self.distance_in_au = 0
+        self.speed = 0
         self.show_path = True
 
         self.x_vel = 0
@@ -66,13 +76,17 @@ class Planet:
                 pygame.draw.lines(win, self.colour, False, updated_points, 1)
 
         if not self.sun:
-            # Render the distance to the sun in AU
-            distance_text = FONT.render(f'{round(self.distance_to_sun/AU, 3)} AU', 1, WHITE)
-            win.blit(distance_text, (70, ((bodies.index(self) - 1) * 18) + 10))
-
             # Render the planet's name
             planet_text = FONT.render(f'{self.name}', 1, WHITE)
             win.blit(planet_text, (10, ((bodies.index(self) - 1) * 18) + 10))
+
+            # Render the distance to the sun in AU
+            distance_text = FONT.render(f'{self.distance_in_au} AU', 1, WHITE)
+            win.blit(distance_text, (70, ((bodies.index(self) - 1) * 18) + 10))
+
+            # Render the planet's absolute velocity (speed)
+            speed_text = FONT.render(f'{self.speed:.3f} Km/s', 1, WHITE)
+            win.blit(speed_text, (150, ((bodies.index(self) - 1) * 18) + 10))
 
     # Sum the gravitational forces on a planet from all other planets
     # And return the net force
@@ -156,21 +170,32 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
+            if event.type == UPDATE_TEXT_EVENT:
+                # Update calculated values
+                for body in bodies:
+                    body.speed = math.sqrt(body.x_vel ** 2 + body.y_vel ** 2) / 1000
+                    body.distance_in_au = round(body.distance_to_sun/AU, 3)
             if event.type == pygame.KEYDOWN:
                 global TIMESTEP
                 # Increase/decrease timestep with +/-
                 if event.key == pygame.K_KP_PLUS:
                     if paused:
                         paused = False
-                    elif multiplier < 1:
-                        TIMESTEP += 131487.192
+                    elif multiplier >= 7:
+                        TIMESTEP += 1440 * 7
+                    elif multiplier >= 1:
+                        TIMESTEP += 1440
                     else:
                         continue
                 if event.key == pygame.K_KP_MINUS:
-                    if multiplier > 0.25:
-                        TIMESTEP -= 131487.192
+                    if multiplier >= 14:
+                        TIMESTEP -= 1440 * 7
+                    elif multiplier > 1:
+                        TIMESTEP -= 1440
                     else:
                         paused = True
+                if event.key == pygame.K_PAUSE:
+                    paused = not paused
                 # Press home to toggle orbital path lines
                 if event.key == pygame.K_HOME:
                     for body in bodies:
@@ -184,8 +209,8 @@ def main():
             body.draw(WIN)
 
         # Render the current time multiplier
-        multiplier = (TIMESTEP) / (1440 * 365.2422)
-        multiplier_text = FONT.render('PAUSED' if paused else f'{multiplier:.3f} yr/s', 1, WHITE)
+        multiplier = int((TIMESTEP) / (1440))
+        multiplier_text = FONT.render('PAUSED' if paused else f'{multiplier} day/s', 1, WHITE)
         WIN.blit(multiplier_text, (10, 20 + ((len(bodies) - 1) * 18)))
 
         # Render the control tips
@@ -193,6 +218,9 @@ def main():
         WIN.blit(multiplier_tip, (10, 780))
         path_tip = FONT.render('HOME to toggle orbital paths', 1, WHITE)
         WIN.blit(path_tip, (10, 762))
+
+        # Calculate the current date and render it on screen
+        # current_date = current_date + (TIMESTEP / 60)
 
         # Tell pygame to draw the next frame
         pygame.display.update()
