@@ -23,7 +23,7 @@ G  = 6.67428e-11
 SCALE = 13 / AU # Bigger number = zoom in
 
 global TIMESTEP
-TIMESTEP = 86400
+TIMESTEP = 131487.192 # 0.25 yr/sec (2191.4532 seconds per frame @ 60fps)
 
 global bodies
 bodies = []
@@ -41,41 +41,41 @@ class Planet:
         self.orbit = []
         self.sun = False
         self.distance_to_sun = 0
-        self.circumference = 0
+        self.show_path = True
 
         self.x_vel = 0
         self.y_vel = 0
 
     def draw(self, win):
+        # Draw a circle on screen to represent the planet
         x = self.x * SCALE + WIDTH / 2
         y = self.y * SCALE + HEIGHT / 2
 
         pygame.draw.circle(win, self.colour, (x, y), self.radius)
 
+        # Render the orbital path
         if (len(self.orbit) > 10) & (self.sun == False):
             updated_points = []
             for point in self.orbit:
-                # Remove the oldest points in the orbit line
-                # if self.circumference != 0:
-                #     if len(updated_points) > (self.circumference - 50):
-                #         self.orbit.pop(0)
-
                 x, y = point
                 x = x * SCALE + WIDTH / 2
                 y = y * SCALE + HEIGHT / 2
                 updated_points.append((x, y))
-
-            pygame.draw.lines(win, self.colour, False, updated_points, 1)
+            
+            if self.show_path:
+                pygame.draw.lines(win, self.colour, False, updated_points, 1)
 
         if not self.sun:
             # Render the distance to the sun in AU
             distance_text = FONT.render(f'{round(self.distance_to_sun/AU, 3)} AU', 1, WHITE)
-            win.blit(distance_text, (70, (bodies.index(self) * 18)))
+            win.blit(distance_text, (70, ((bodies.index(self) - 1) * 18) + 10))
 
             # Render the planet's name
             planet_text = FONT.render(f'{self.name}', 1, WHITE)
-            win.blit(planet_text, (10, (bodies.index(self) * 18)))
+            win.blit(planet_text, (10, ((bodies.index(self) - 1) * 18) + 10))
 
+    # Sum the gravitational forces on a planet from all other planets
+    # And return the net force
     def attraction(self, other):
         other_x, other_y = other.x, other.y
         distance_x = other_x - self.x
@@ -91,6 +91,7 @@ class Planet:
         force_y = math.sin(theta) * force
         return force_x, force_y
     
+    # Calculate the position of the planet for this frame
     def update_position(self, planets):
         total_fx = total_fy = 0
         for planet in planets:
@@ -107,24 +108,13 @@ class Planet:
         self.y += self.y_vel * TIMESTEP
         
         self.orbit.append((self.x, self.y))
-
-        # if self.circumference != 0:
-        #     return
-        # if (len(self.orbit) > 50) & (self.sun == False):
-        #     curr_x = round(self.x * SCALE, 0)
-        #     curr_y = round(self.y * SCALE, 0)
-        #     start_x = round(self.orbit[0][0] * SCALE, 0)
-        #     start_y = round(self.orbit[0][1] * SCALE, 0)
-
-        #     if (curr_x, curr_y) == (start_x, start_y):
-        #         self.circumference = len(self.orbit)
-                # print(f'{self.name} Circumference: {self.circumference}')
                 
 def main():
     run = True
     paused = False
     clock = pygame.time.Clock()
 
+    # Define all planets and their properties (name, radius, colour, mass etc.)
     sun = Planet('Sol', 0, 0, 1, WHITE, 1.9889 * 10**30)
     sun.sun = True
 
@@ -168,28 +158,41 @@ def main():
                 run = False
             if event.type == pygame.KEYDOWN:
                 global TIMESTEP
-                # Increase/decrease timestep by 0.5x with +/-
+                # Increase/decrease timestep with +/-
                 if event.key == pygame.K_KP_PLUS:
                     if paused:
                         paused = False
-                    TIMESTEP += 86400 / 2
+                    elif multiplier < 1:
+                        TIMESTEP += 131487.192
+                    else:
+                        continue
                 if event.key == pygame.K_KP_MINUS:
-                    if TIMESTEP != 0:
-                        TIMESTEP -= 86400 / 2
+                    if multiplier > 0.25:
+                        TIMESTEP -= 131487.192
                     else:
                         paused = True
                 # Press home to toggle orbital path lines
                 if event.key == pygame.K_HOME:
                     for body in bodies:
-                        body.orbit = []
+                        body.show_path = not body.show_path
 
-        if not paused:
-            for body in bodies:
+        # Draw the planets and orbital paths
+        for body in bodies:
+            if not paused:
                 body.update_position(bodies)
-                body.draw(WIN)
 
-        timestep_text = FONT.render(f'{'PAUSED' if TIMESTEP == 0 else str(TIMESTEP/86400) + ' yr/sec'}', 1, WHITE)
-        WIN.blit(timestep_text, (10, (len(bodies) * 18)))
+            body.draw(WIN)
+
+        # Render the current time multiplier
+        multiplier = (TIMESTEP) / (1440 * 365.2422)
+        multiplier_text = FONT.render('PAUSED' if paused else f'{multiplier:.3f} yr/s', 1, WHITE)
+        WIN.blit(multiplier_text, (10, 20 + ((len(bodies) - 1) * 18)))
+
+        # Render the control tips
+        multiplier_tip = FONT.render('NUMPAD +/- to speed up or slow down time', 1, WHITE)
+        WIN.blit(multiplier_tip, (10, 780))
+        path_tip = FONT.render('HOME to toggle orbital paths', 1, WHITE)
+        WIN.blit(path_tip, (10, 762))
 
         # Tell pygame to draw the next frame
         pygame.display.update()
