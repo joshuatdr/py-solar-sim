@@ -29,12 +29,12 @@ G  = 6.67428e-11
 scale = 13 / AU # Bigger number = zoom in
 timestep = 1440 # 1 day/sec (1440 seconds per frame @ 60fps)
 bodies = []
-elapsed_time = datetime(2000, 1, 1)
+elapsed_time = datetime(2266, 1, 1)
 multiplier = (timestep) / (1440)
 
-# Schedule an event which calculates game data every 100ms
+# Schedule an event which calculates game data every 50ms
 UPDATE = pygame.USEREVENT
-UPDATE_DELAY = 100
+UPDATE_DELAY = 50
 pygame.time.set_timer(UPDATE, UPDATE_DELAY)
 
 class Planet:
@@ -109,6 +109,8 @@ class Planet:
     
     # Calculate the position of the planet for this frame
     def update_position(self, planets):
+        if self.sun:
+            return
         total_fx = total_fy = 0
         for planet in planets:
             if self == planet:
@@ -132,28 +134,28 @@ def main():
     sun = Planet('Sol', 'S', 0, 0, 1, WHITE, 1.9889 * 10**30, 0)
     sun.sun = True
 
-    mercury = Planet('Mercury', 'Me', -0.387 * AU, 0, 2, DARK_GREY, 3.285 * 10**23, 2)
+    mercury = Planet('Mercury', 'Me', -0.387 * AU, 0, 2, DARK_GREY, 3.285 * 10**23, 4)
     mercury.y_vel = 47.4 * 1000
 
-    venus = Planet('Venus', 'V', -0.723 * AU, 0, 2, YELLOW_WHITE, 4.8685 * 10**24, 5)
+    venus = Planet('Venus', 'V', -0.723 * AU, 0, 2, YELLOW_WHITE, 4.8685 * 10**24, 10)
     venus.y_vel = 35.02 * 1000
 
-    earth = Planet('Earth', 'E', -1 * AU, 0, 2, BLUE, 5.972 * 10**24, 10)
+    earth = Planet('Earth', 'E', -1 * AU, 0, 2, BLUE, 5.972 * 10**24, 18)
     earth.y_vel = 29.783 * 1000
 
-    mars = Planet('Mars', 'Ma', -1.524 * AU, 0, 2, RED, 6.39 * 10**23, 17)
+    mars = Planet('Mars', 'Ma', -1.524 * AU, 0, 2, RED, 6.39 * 10**23, 34)
     mars.y_vel = 24.077 * 1000
 
-    jupiter = Planet('Jupiter', 'J', -5.2038 * AU, 0, 2, ORANGE_WHITE, 1.8982 * 10**27, 110)
+    jupiter = Planet('Jupiter', 'J', -5.2038 * AU, 0, 2, ORANGE_WHITE, 1.8982 * 10**27, 220)
     jupiter.y_vel = 13.06 * 1000
 
-    saturn = Planet('Saturn', 'S', -9.5826 * AU, 0, 2, CREAM, 5.6834 * 10**26, 285)
+    saturn = Planet('Saturn', 'S', -9.5826 * AU, 0, 2, CREAM, 5.6834 * 10**26, 570)
     saturn.y_vel = 9.68 * 1000
 
-    uranus = Planet('Uranus', 'U', -19.191 * AU, 0, 2, PALE_BLUE, 8.6810 * 10**25, 800)
+    uranus = Planet('Uranus', 'U', -19.191 * AU, 0, 2, PALE_BLUE, 8.6810 * 10**25, 1600)
     uranus.y_vel = 6.80 * 1000
 
-    neptune = Planet('Neptune', 'N', -30.07 * AU, 0, 2, DARK_BLUE, 1.0241 * 10**26, 1300)
+    neptune = Planet('Neptune', 'N', -30.07 * AU, 0, 2, DARK_BLUE, 1.0241 * 10**26, 3200)
     neptune.y_vel = 5.43 * 1000
 
     global bodies
